@@ -1,0 +1,45 @@
+{
+  "dependencies": {
+    "@kubernetes/client-node": "^0.20.0",
+    "dotenv": "^16.4.1",
+    "lodash": "^4.17.21",
+    "typescript": "^5.3.3"
+  },
+  "name": "kubereveal-ts",
+  "version": "1.0.0",
+  "description": "View kubernetes secrets in the terminal",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/lodash": "^4.14.202",
+    "@types/node": "^20.11.16",
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "@typescript-eslint/parser": "^6.20.0",
+    "eslint": "^8.56.0",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.2.4",
+    "ts-node": "^10.9.2"
+  },
+  "scripts": {
+    "test": "yarn run test",
+    "build": "tsc",
+    "watch-ts": "tsc -w",
+    "watch-node": "nodemon dist/server.js",
+    "fmt": "prettier --write '**/*.ts'",
+    "fmt:check": "prettier --list-different --loglevel=debug '**/*.ts'",
+    "lint": "eslint --ext .ts ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samceena/kubereveal-ts.git"
+  },
+  "keywords": [
+    "kubernetes",
+    "secrets"
+  ],
+  "author": "Sam",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/samceena/kubereveal-ts/issues"
+  },
+  "homepage": "https://github.com/samceena/kubereveal-ts#readme"
+}
