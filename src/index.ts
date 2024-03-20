@@ -1,49 +1,63 @@
 import * as k8s from "@kubernetes/client-node";
-import { KubernetesSecretTypes } from "./types";
 import { EncoderDecoder } from "./EncoderDecoder";
-// import {secretDecoders} from './utils'
+import {program} from 'commander'
+
+let namespaceValue;
+let k8sConfigFile;
+let secretName: string | undefined  = undefined;
+
+program
+  .option('-n, --namespace <namespace>', 'Which kubernetes namespace to search for secret from', 'default')
+  .option('-f, --file <filepath>', 'Path to the kubernetes config file to use')
+  .option('-s, --secret <secretname>', 'The name of the secret to search for and decode1')
+
+program.parse( process.argv )
+const options = program.opts()
+
+
+if (options.namespace){
+  namespaceValue = options.namespace
+}
+if (options.file){
+  k8sConfigFile = options.file
+}
+if (options.secret){
+  secretName = options.secret
+}
+let welcomeText = `\nFetching secrets for ${secretName} in namespace ${namespaceValue} `
+if ( k8sConfigFile ) {
+  welcomeText += `using kubeconfig file ${k8sConfigFile}\n`
+} else {
+  welcomeText += `using default kubeconfig file\n`
+}
+console.log(welcomeText)
+
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-// find secrets in the '' namespace
-// const namespace = ''
-
-k8sApi
-  .listSecretForAllNamespaces()
-  // .listNamespacedSecret(namespace)
-  .then((data) => {
-    data.body.items.map((item) => {
-      const secretType = item.type;
-      if (secretType === KubernetesSecretTypes.opaque) {
-        let secretCount = 0;
-        if (item?.data && item.metadata?.name) {
-          secretCount = Object.keys(item.data).length;
-          console.log(
-            `Secret: ${item.metadata.name} in namespace ${item.metadata?.namespace} has ${secretCount} secrets\n`,
-          );
-
-          const secretData = item?.data;
-          if (secretData) {
-            for (const [key, value] of Object.entries(secretData)) {
-              const encoderDecoder = new EncoderDecoder(value);
-              console.log(
-                `key: ${key}, value: ${encoderDecoder.decodeBase64String()}`,
+if (!secretName){
+  console.log('Secret name is required')
+} else {
+  k8sApi
+    .readNamespacedSecret(secretName, namespaceValue)
+    .then((data) => {
+      if ( data?.body?.data ) {
+        for (const [key, value] of Object.entries(data.body.data)){
+            const encoderDecoder = new EncoderDecoder(value);
+            console.log(
+              `Secret key: ${key}, Secret value: ${encoderDecoder.decodeBase64String()}`,
               );
-            }
-            console.log("-------");
-          } else {
-            console.log(`No data found for secret ${item.metadata.name} `);
-          }
-        } else {
-          console.log(`Secret: ${item.metadata?.name} has no secrets\n`);
         }
       }
-      return undefined;
+    })
+    .catch((error) => {
+      if (error.toString().includes("HttpError") >= 0){
+        console.log(`\nSecret ${secretName} not found\n`)
+      } else {
+        console.log("Error fetching secrets:", error);
+      }
     });
-  })
-  .catch((error) => {
-    console.log("error loading secrets: ", error);
-  });
+}
